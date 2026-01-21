@@ -122,8 +122,7 @@ def is_prime(n):
 
 def solve():
     n = inp()
-    numbers = inpl()
-
+    print(power_mod(2,n))
     pass
 
 

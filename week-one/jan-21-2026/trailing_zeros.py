@@ -122,7 +122,8 @@ def is_prime(n):
 
 def solve():
     n = inp()
-    numbers = inpl()
+    
+
 
     pass
 
