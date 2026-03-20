@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LC 1438 — Longest Subarray Abs Diff ≤ K</title>
+<style>
+  :root {
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-mono: 'Fira Code', 'Cascadia Code', monospace;
+    --color-bg: #ffffff;
+    --color-bg2: #f5f5f3;
+    --color-bg3: #eeede8;
+    --color-text: #1a1a18;
+    --color-text2: #5f5e5a;
+    --color-text3: #888780;
+    --color-border: rgba(0,0,0,0.12);
+    --color-border2: rgba(0,0,0,0.22);
+    --color-info-bg: #e6f1fb;
+    --color-info-text: #0c447c;
+    --color-info-border: #378add;
+    --color-warn-bg: #faeeda;
+    --color-warn-text: #633806;
+    --color-warn-border: #ba7517;
+    --color-success-bg: #eaf3de;
+    --color-success-text: #3b6d11;
+    --color-success-border: #639922;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1c1c1a;
+      --color-bg2: #252523;
+      --color-bg3: #2e2e2b;
+      --color-text: #e8e6de;
+      --color-text2: #a8a69e;
+      --color-text3: #6e6d67;
+      --color-border: rgba(255,255,255,0.1);
+      --color-border2: rgba(255,255,255,0.2);
+      --color-info-bg: #042c53;
+      --color-info-text: #b5d4f4;
+      --color-info-border: #378add;
+      --color-warn-bg: #412402;
+      --color-warn-text: #fac775;
+      --color-warn-border: #ef9f27;
+      --color-success-bg: #173404;
+      --color-success-text: #c0dd97;
+      --color-success-border: #639922;
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    padding: 2rem 1.5rem;
+    max-width: 860px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--color-text2); margin-bottom: 1.5rem; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .tab { padding: 6px 16px; border-radius: 20px; border: 0.5px solid var(--color-border2); font-size: 13px; cursor: pointer; background: var(--color-bg); color: var(--color-text2); transition: all .15s; }
+  .tab.active { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+
+  .section { margin-bottom: 1.5rem; }
+  .label { font-size: 11px; font-weight: 500; color: var(--color-text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+
+  .insight { border-left: 2px solid var(--color-info-border); padding: 8px 12px; background: var(--color-info-bg); border-radius: 0 8px 8px 0; font-size: 13px; color: var(--color-info-text); line-height: 1.6; margin-bottom: 10px; }
+  .warn { border-left: 2px solid var(--color-warn-border); padding: 8px 12px; background: var(--color-warn-bg); border-radius: 0 8px 8px 0; font-size: 13px; color: var(--color-warn-text); line-height: 1.6; margin-bottom: 10px; }
+  .success { border-left: 2px solid var(--color-success-border); padding: 8px 12px; background: var(--color-success-bg); border-radius: 0 8px 8px 0; font-size: 13px; color: var(--color-success-text); line-height: 1.6; margin-bottom: 10px; }
+
+  .array-row { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+  .ptr-labels { display: flex; gap: 4px; margin-bottom: 4px; }
+  .ptr-label { width: 44px; text-align: center; font-size: 10px; color: var(--color-text3); }
+  .cell { width: 44px; height: 44px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; border: 0.5px solid var(--color-border); background: var(--color-bg2); color: var(--color-text); position: relative; transition: all .2s; flex-shrink: 0; }
+  .cell .idx { font-size: 9px; font-weight: 400; color: var(--color-text3); position: absolute; top: 3px; left: 0; right: 0; text-align: center; }
+  .cell.in-window { background: #e6f1fb; border-color: #378add; color: #0c447c; }
+  .cell.left-ptr { background: #e1f5ee; border-color: #1d9e75; color: #04342c; border-width: 2px; }
+  .cell.right-ptr { background: #eeedfe; border-color: #7f77dd; color: #26215c; border-width: 2px; }
+  .cell.both-ptr { background: #faeeda; border-color: #ba7517; color: #412402; border-width: 2px; }
+  .cell.best { outline: 2px solid #1d9e75; outline-offset: 2px; }
+  @media (prefers-color-scheme: dark) {
+    .cell.in-window { background: #042c53; border-color: #378add; color: #b5d4f4; }
+    .cell.left-ptr { background: #04342c; border-color: #1d9e75; color: #9fe1cb; }
+    .cell.right-ptr { background: #26215c; border-color: #7f77dd; color: #cecbf6; }
+    .cell.both-ptr { background: #412402; border-color: #ef9f27; color: #fac775; }
+  }
+
+  .deque-row { display: flex; gap: 4px; align-items: center; }
+  .deq-cell { min-width: 36px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; border: 0.5px solid var(--color-border2); transition: all .2s; padding: 0 8px; }
+  .deq-cell.max-d { background: #faece7; border-color: #d85a30; color: #4a1b0c; }
+  .deq-cell.min-d { background: #e6f1fb; border-color: #378add; color: #042c53; }
+  @media (prefers-color-scheme: dark) {
+    .deq-cell.max-d { background: #4a1b0c; border-color: #d85a30; color: #f5c4b3; }
+    .deq-cell.min-d { background: #042c53; border-color: #378add; color: #b5d4f4; }
+  }
+  .deq-label { font-size: 11px; color: var(--color-text2); min-width: 80px; flex-shrink: 0; }
+  .deq-empty { font-size: 12px; color: var(--color-text3); font-style: italic; }
+
+  .stats-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .stat { background: var(--color-bg2); border-radius: 8px; padding: 8px 14px; flex: 1; min-width: 80px; }
+  .stat-val { font-size: 20px; font-weight: 500; color: var(--color-text); }
+  .stat-name { font-size: 11px; color: var(--color-text2); margin-top: 2px; }
+
+  .log { background: var(--color-bg3); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--color-text2); line-height: 1.6; min-height: 48px; border: 0.5px solid var(--color-border); }
+  .log strong { font-weight: 500; color: var(--color-text); }
+
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  .btn { padding: 7px 16px; border-radius: var(--radius); border: 0.5px solid var(--color-border2); font-size: 13px; cursor: pointer; background: var(--color-bg); color: var(--color-text); transition: all .15s; }
+  .btn:hover { background: var(--color-bg2); }
+  .btn.primary { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+  .input-row input { border: 0.5px solid var(--color-border2); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; background: var(--color-bg); color: var(--color-text); }
+  .input-row input:focus { outline: none; border-color: var(--color-text); }
+
+  .ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ctable th { font-size: 11px; font-weight: 500; color: var(--color-text3); text-transform: uppercase; letter-spacing: .04em; padding: 6px 10px; text-align: left; border-bottom: 0.5px solid var(--color-border); }
+  .ctable td { padding: 8px 10px; border-bottom: 0.5px solid var(--color-border); color: var(--color-text2); vertical-align: top; }
+  .ctable tr:last-child td { border-bottom: none; }
+  .ctable .best-row td { color: var(--color-success-text); background: var(--color-success-bg); }
+  .code-inline { font-family: var(--font-mono); font-size: 12px; background: var(--color-bg2); padding: 1px 5px; border-radius: 4px; color: var(--color-text); }
+
+  pre { background: var(--color-bg2); border-radius: 8px; padding: 14px; font-size: 12px; font-family: var(--font-mono); color: var(--color-text); overflow-x: auto; border: 0.5px solid var(--color-border); line-height: 1.7; }
+  p { font-size: 13px; color: var(--color-text2); line-height: 1.7; }
+  strong { font-weight: 500; }
+  code { font-family: var(--font-mono); font-size: 12px; background: var(--color-bg2); padding: 1px 5px; border-radius: 4px; }
+  .speed-label { font-size: 12px; color: var(--color-text2); }
+</style>
+</head>
+<body>
+
+<h1>LC 1438 — Longest Subarray with Abs Diff ≤ K</h1>
+<p class="subtitle">Interactive visualizer · O(N) two-deque solution · Uber SDE1/SDE2 pattern</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="setTab('intuition')">Intuition</button>
+  <button class="tab" onclick="setTab('complexity')">Complexity Arc</button>
+  <button class="tab" onclick="setTab('visualizer')">Step Visualizer</button>
+  <button class="tab" onclick="setTab('code')">Clean Code</button>
+</div>
+
+<!-- INTUITION -->
+<div id="tab-intuition">
+  <div class="section">
+    <div class="insight"><strong>The core question:</strong> For every right pointer position r, what is the smallest left pointer L such that max(arr[L..r]) − min(arr[L..r]) ≤ K?</div>
+    <div class="section">
+      <div class="label">Why naive fails</div>
+      <p style="margin-bottom:10px">Brute force checks every pair (i,j) and scans the subarray for min/max → O(N³). The bottleneck is <em>recomputing min/max from scratch</em> each time the window moves.<br><br><strong>Key insight:</strong> When we slide a window right by one, we only ADD one element on the right. The min/max can only change at the edges — this is what a monotonic deque exploits.</p>
+      <div class="warn"><strong>Two-pointer alone isn't enough.</strong> Unlike "sum ≤ K" problems, shrinking the window doesn't guarantee the condition restores — removing an element from the left might remove the current max OR min. You need O(1) access to both max and min at all times.</div>
+    </div>
+    <div class="section">
+      <div class="label">The deque insight</div>
+      <p style="margin-bottom:10px">Maintain two deques simultaneously:<br>
+      — <strong>max_dq</strong>: indices in <em>decreasing</em> value order → front = window max<br>
+      — <strong>min_dq</strong>: indices in <em>increasing</em> value order → front = window min<br><br>
+      When you add element at index r:<br>
+      1. Pop max_dq back while <code>arr[back] ≤ arr[r]</code><br>
+      2. Pop min_dq back while <code>arr[back] ≥ arr[r]</code><br>
+      3. If <code>arr[max_dq[0]] − arr[min_dq[0]] &gt; K</code>, advance left, evicting stale fronts<br>
+      4. Window size = r − left + 1</p>
+      <div class="success">Every element is added to each deque once and removed at most once → O(N) total. Window only ever moves right → two-pointer validity.</div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLEXITY -->
+<div id="tab-complexity" style="display:none">
+  <div class="section">
+    <div class="label">The arc Uber expects to hear out loud</div>
+    <table class="ctable">
+      <tr><th>Approach</th><th>Time</th><th>Space</th><th>Key insight</th></tr>
+      <tr><td><strong>Brute force</strong> — 3 nested loops</td><td>O(N³)</td><td>O(1)</td><td>For every (i,j) scan [i..j] for min/max</td></tr>
+      <tr><td><strong>Better brute</strong> — 2 loops + running min/max</td><td>O(N²)</td><td>O(1)</td><td>Track min/max as j expands. Still nested.</td></tr>
+      <tr><td><strong>Two-pointer + sorted set</strong> (TreeMap / SortedList)</td><td>O(N log N)</td><td>O(N)</td><td>Sorted set gives O(log N) min/max. Overkill structure.</td></tr>
+      <tr class="best-row"><td><strong>Two monotonic deques ✓</strong></td><td>O(N)</td><td>O(N)</td><td>Each element pushed/popped once per deque. O(1) amortized per step.</td></tr>
+    </table>
+    <div style="margin-top:1rem" class="insight">
+      <strong>What to say in the interview:</strong> "Brute force is O(N²) if I track running min/max in the inner loop. The bottleneck is still the outer loop giving N starting points. The insight is that min/max of a sliding window can be maintained in O(1) amortized using monotonic deques — collapsing this to O(N) with a single left pointer that never moves backward."
+    </div>
+    <div style="margin-top:1rem">
+      <div class="label">Why sorted set is worse than deque</div>
+      <p>A sorted set gives O(log N) insert/delete and O(1) min/max — O(N log N) overall. A monotonic deque achieves O(1) amortized per element by being <em>lazily invalidated</em> — you only keep elements that could possibly be min/max in future windows. The deque is always a subset of the window.</p>
+    </div>
+  </div>
+</div>
+
+<!-- VISUALIZER -->
+<div id="tab-visualizer" style="display:none">
+  <div class="section">
+    <div class="input-row">
+      <input id="arr-input" value="8,2,4,7,1,5,3" placeholder="e.g. 8,2,4,7,1,5,3" style="width:240px"/>
+      <input id="k-input" value="4" placeholder="K" style="width:70px"/>
+      <button class="btn primary" onclick="initViz()">Load</button>
+    </div>
+    <div class="stats-row" id="stats-row">
+      <div class="stat"><div class="stat-val" id="s-left">0</div><div class="stat-name">Left ptr</div></div>
+      <div class="stat"><div class="stat-val" id="s-right">0</div><div class="stat-name">Right ptr</div></div>
+      <div class="stat"><div class="stat-val" id="s-window">1</div><div class="stat-name">Window size</div></div>
+      <div class="stat"><div class="stat-val" id="s-best">0</div><div class="stat-name">Best so far</div></div>
+      <div class="stat"><div class="stat-val" id="s-diff">-</div><div class="stat-name">max−min</div></div>
+      <div class="stat"><div class="stat-val" id="s-k">4</div><div class="stat-name">K</div></div>
+    </div>
+    <div class="section">
+      <div class="label">Array</div>
+      <div id="ptr-labels-row" class="ptr-labels"></div>
+      <div class="array-row" id="array-viz"></div>
+    </div>
+    <div class="section">
+      <div class="label" style="margin-bottom:6px">Monotonic deques</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="deque-row"><span class="deq-label">max_dq (vals)</span><div id="max-dq-cells"></div></div>
+        <div class="deque-row"><span class="deq-label">min_dq (vals)</span><div id="min-dq-cells"></div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="label">What happened this step</div>
+      <div class="log" id="step-log">Press Next Step or Run Auto to begin.</div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="btn-prev" onclick="stepBack()" disabled>← Prev</button>
+      <button class="btn primary" id="btn-next" onclick="stepForward()">Next Step →</button>
+      <button class="btn" id="btn-auto" onclick="toggleAuto()">▶ Auto</button>
+      <button class="btn" onclick="initViz()">↺ Reset</button>
+      <span class="speed-label">Speed:</span>
+      <input type="range" min="100" max="1200" value="700" id="speed-slider" style="width:80px" oninput="updateSpeed(this.value)">
+    </div>
+  </div>
+</div>
+
+<!-- CODE -->
+<div id="tab-code" style="display:none">
+  <div class="section">
+    <div class="label">Python — O(N) two deque solution</div>
+    <pre><code>from collections import deque
+
+def longestSubarray(nums, limit):
+    max_dq = deque()  # indices, values decreasing → front = max
+    min_dq = deque()  # indices, values increasing → front = min
+    left = 0
+    best = 0
+
+    for right in range(len(nums)):
+        # maintain max_dq: remove back while back val ≤ current
+        while max_dq and nums[max_dq[-1]] <= nums[right]:
+            max_dq.pop()
+        max_dq.append(right)
+
+        # maintain min_dq: remove back while back val >= current
+        while min_dq and nums[min_dq[-1]] >= nums[right]:
+            min_dq.pop()
+        min_dq.append(right)
+
+        # shrink window if constraint violated
+        while nums[max_dq[0]] - nums[min_dq[0]] > limit:
+            left += 1
+            if max_dq[0] < left:
+                max_dq.popleft()
+            if min_dq[0] < left:
+                min_dq.popleft()
+
+        best = max(best, right - left + 1)
+
+    return best</code></pre>
+  </div>
+  <div class="section">
+    <div class="label">Java — same logic</div>
+    <pre><code>public int longestSubarray(int[] nums, int limit) {
+    Deque&lt;Integer&gt; maxDq = new ArrayDeque&lt;&gt;();
+    Deque&lt;Integer&gt; minDq = new ArrayDeque&lt;&gt;();
+    int left = 0, best = 0;
+
+    for (int right = 0; right &lt; nums.length; right++) {
+        while (!maxDq.isEmpty() &amp;&amp; nums[maxDq.peekLast()] &lt;= nums[right])
+            maxDq.pollLast();
+        maxDq.addLast(right);
+
+        while (!minDq.isEmpty() &amp;&amp; nums[minDq.peekLast()] &gt;= nums[right])
+            minDq.pollLast();
+        minDq.addLast(right);
+
+        while (nums[maxDq.peekFirst()] - nums[minDq.peekFirst()] &gt; limit) {
+            left++;
+            if (maxDq.peekFirst() &lt; left) maxDq.pollFirst();
+            if (minDq.peekFirst() &lt; left) minDq.pollFirst();
+        }
+        best = Math.max(best, right - left + 1);
+    }
+    return best;
+}</code></pre>
+  </div>
+  <div class="section">
+    <div class="label">Edge cases to mention</div>
+    <div class="insight">K = 0 → only subarrays of all identical elements. Works correctly — window shrinks until max == min.</div>
+    <div class="insight">All elements equal → entire array is valid. max_dq and min_dq fronts always equal → diff = 0 ≤ K always.</div>
+    <div class="insight">Single element → always valid, returns 1.</div>
+    <div class="warn">Duplicate values: deques store indices (not values), so duplicates are handled naturally.</div>
+  </div>
+  <div class="section">
+    <div class="label">What makes this answer strong</div>
+    <p>1. Restate the constraint: "I need max(window) − min(window) ≤ K at every step."<br>
+    2. Name the bottleneck: "The hard part is maintaining max and min as the window slides."<br>
+    3. Show the arc: O(N³) → O(N²) → O(N log N) → O(N), explaining each transition.<br>
+    4. Prove O(N): "Each element appended once, removed at most once per deque — amortized O(1), O(N) total."<br>
+    5. Prove correctness: "Left pointer only moves forward. Each time the constraint is violated, we must advance left — no smaller starting point fixes it."</p>
+  </div>
+</div>
+
+<script>
+let arr=[], K=4, steps=[], stepIdx=-1, autoTimer=null, autoSpeed=700;
+
+function setTab(t){
+  ['intuition','complexity','visualizer','code'].forEach(x=>{
+    document.getElementById('tab-'+x).style.display = x===t?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    const tabs=['intuition','complexity','visualizer','code'];
+    el.classList.toggle('active', tabs[i]===t);
+  });
+}
+
+function initViz(){
+  const rawArr = document.getElementById('arr-input').value.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+  K = parseInt(document.getElementById('k-input').value) || 4;
+  arr = rawArr.length ? rawArr : [8,2,4,7,1,5,3];
+  document.getElementById('s-k').textContent = K;
+  steps = computeSteps(arr, K);
+  stepIdx = -1;
+  if(autoTimer){ clearInterval(autoTimer); autoTimer=null; document.getElementById('btn-auto').textContent='▶ Auto'; }
+  renderStep(-1);
+}
+
+function computeSteps(nums, limit){
+  const out=[];
+  const maxDq=[], minDq=[];
+  let left=0, best=0, bestL=0, bestR=0;
+  out.push({left,right:-1,maxDq:[...maxDq],minDq:[...minDq],best,bestL,bestR,msg:"Ready. Right pointer will expand the window step by step.",shrink:false});
+  for(let right=0;right<nums.length;right++){
+    const popped_max=[], popped_min=[];
+    while(maxDq.length && nums[maxDq[maxDq.length-1]] <= nums[right]) popped_max.push(maxDq.pop());
+    maxDq.push(right);
+    while(minDq.length && nums[minDq[minDq.length-1]] >= nums[right]) popped_min.push(minDq.pop());
+    minDq.push(right);
+    const diff = nums[maxDq[0]] - nums[minDq[0]];
+    let msg = `Added arr[${right}]=${nums[right]}. `;
+    if(popped_max.length) msg += `max_dq evicted [${popped_max.map(i=>nums[i]).join(',')}] from back. `;
+    if(popped_min.length) msg += `min_dq evicted [${popped_min.map(i=>nums[i]).join(',')}] from back. `;
+    msg += `max=${nums[maxDq[0]]}, min=${nums[minDq[0]]}, diff=${diff}, K=${limit}.`;
+    if(diff <= limit){
+      const ws=right-left+1;
+      if(ws>best){best=ws;bestL=left;bestR=right;}
+      msg += ` ✓ Valid (${diff}≤${limit}). Best=${best}.`;
+    }
+    out.push({left,right,maxDq:[...maxDq],minDq:[...minDq],best,bestL,bestR,diff,msg,shrink:false});
+    while(nums[maxDq[0]]-nums[minDq[0]] > limit){
+      const oldLeft=left;
+      left++;
+      let evicted='';
+      if(maxDq[0]<left){maxDq.shift();evicted+=' max_dq front';}
+      if(minDq[0]<left){minDq.shift();evicted+=' min_dq front';}
+      const d2=nums[maxDq[0]]-nums[minDq[0]];
+      const ws=right-left+1;
+      if(ws>best){best=ws;bestL=left;bestR=right;}
+      out.push({left,right,maxDq:[...maxDq],minDq:[...minDq],best,bestL,bestR,diff:d2,
+        msg:`Constraint violated. Moved left ${oldLeft}→${left}.${evicted?` Evicted stale:${evicted}.`:''} New diff=${d2}.`,shrink:true});
+    }
+  }
+  out.push({...out[out.length-1],msg:`Done! Answer = ${best} (window [${bestL}..${bestR}] = [${nums.slice(bestL,bestR+1).join(',')}]).`,done:true});
+  return out;
+}
+
+function renderStep(idx){
+  const s = idx<0 ? steps[0] : steps[Math.min(idx,steps.length-1)];
+  document.getElementById('s-left').textContent = s.left;
+  document.getElementById('s-right').textContent = Math.max(s.right,0);
+  document.getElementById('s-window').textContent = s.right>=0 ? s.right-s.left+1 : 0;
+  document.getElementById('s-best').textContent = s.best;
+  document.getElementById('s-diff').textContent = s.diff!==undefined ? s.diff : '-';
+  document.getElementById('step-log').innerHTML = s.msg;
+  const ptrRow = document.getElementById('ptr-labels-row');
+  ptrRow.innerHTML = arr.map((_,i)=>{
+    let t='';
+    if(i===s.left && i===s.right) t='L=R';
+    else if(i===s.left) t='L';
+    else if(i===s.right) t='R';
+    return `<div class="ptr-label">${t}</div>`;
+  }).join('');
+  document.getElementById('array-viz').innerHTML = arr.map((v,i)=>{
+    let cls='cell';
+    const inW=s.right>=0 && i>=s.left && i<=s.right;
+    const isL=i===s.left, isR=i===s.right;
+    const isBest=s.done && i>=s.bestL && i<=s.bestR;
+    if(isL&&isR) cls+=' both-ptr';
+    else if(isL) cls+=' left-ptr';
+    else if(isR) cls+=' right-ptr';
+    else if(inW) cls+=' in-window';
+    if(isBest) cls+=' best';
+    return `<div class="${cls}"><span class="idx">${i}</span>${v}</div>`;
+  }).join('');
+  const maxC=document.getElementById('max-dq-cells');
+  const minC=document.getElementById('min-dq-cells');
+  maxC.innerHTML = s.maxDq.length===0 ? '<span class="deq-empty">empty</span>' :
+    s.maxDq.map(i=>`<div class="deq-cell max-d">${arr[i]}</div>`).join('<span style="font-size:11px;color:#888;padding:0 2px">›</span>');
+  minC.innerHTML = s.minDq.length===0 ? '<span class="deq-empty">empty</span>' :
+    s.minDq.map(i=>`<div class="deq-cell min-d">${arr[i]}</div>`).join('<span style="font-size:11px;color:#888;padding:0 2px">›</span>');
+  document.getElementById('btn-prev').disabled = idx<=0;
+  document.getElementById('btn-next').disabled = idx>=steps.length-1;
+}
+
+function stepForward(){ if(stepIdx<steps.length-1){ stepIdx++; renderStep(stepIdx); } }
+function stepBack(){ if(stepIdx>0){ stepIdx--; renderStep(stepIdx); } }
+function toggleAuto(){
+  if(autoTimer){ clearInterval(autoTimer); autoTimer=null; document.getElementById('btn-auto').textContent='▶ Auto'; }
+  else {
+    document.getElementById('btn-auto').textContent='⏸ Pause';
+    autoTimer=setInterval(()=>{
+      if(stepIdx>=steps.length-1){ clearInterval(autoTimer); autoTimer=null; document.getElementById('btn-auto').textContent='▶ Auto'; return; }
+      stepIdx++; renderStep(stepIdx);
+    }, autoSpeed);
+  }
+}
+function updateSpeed(v){ autoSpeed=parseInt(v); }
+
+initViz();
+</script>
+</body>
+</html>
