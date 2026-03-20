@@ -5,10 +5,10 @@ import java.util.*;
 
 public class HasPath {
     public static void main(String[] args) throws IOException {
-        int t = scanInt();
-        while (t-- > 0) {
-            solve();
-        }
+        // int t = scanInt();
+        // while (t-- > 0) {
+        solve();
+        // }
     }
 
     static class Edge {
@@ -28,30 +28,114 @@ public class HasPath {
     }
 
     public static void solve() throws IOException {
-        int vertices = scanInt();
-        int edges = scanInt();
+        // int vertices = scanInt();
+        // int edges = scanInt();
+        int vertices = 6;
+        // undirected weighted edges: {u, v, weight}
+        int[][] edgeInput = {
+                { 0, 1, 10 },
+                { 1, 2, 10 },
+                { 0, 3, 1 },
+                { 3, 2, 1 },
+                { 4, 5, 3 },
+        };
+        // int src = scanInt();
+        // int dst = scanInt();
+        int src = 0;
+        int dst = 2;
+
         ArrayList<Edge>[] graph = new ArrayList[vertices];
         for (int i = 0; i < graph.length; i++) {
             graph[i] = new ArrayList<Edge>();
         }
-        for (int i = 0; i < edges; i++) {
-            int[] edge = scanIntArray(3);
+        // for (int i = 0; i < edges; i++) {
+        //     int[] edge = scanIntArray(3);
+        //     graph[edge[0]].add(new Edge(edge[0], edge[1], edge[2]));
+        //     graph[edge[1]].add(new Edge(edge[1], edge[0], edge[2]));
+        // }
+        for (int[] edge : edgeInput) {
             graph[edge[0]].add(new Edge(edge[0], edge[1], edge[2]));
             graph[edge[1]].add(new Edge(edge[1], edge[0], edge[2]));
         }
-        int src = scanInt();
-        int dst = scanInt();
 
-        boolean[] visited = new boolean[vertices];
-        // boolean result = hasPath(src, dst, graph, visited);
-        // System.out.println("Path from " + src + " to " + dst + ": " + (result ? "EXISTS" : "DOES NOT EXIST"));
-        printAllPaths(src, dst, graph, visited, "");
+        boolean[] visitedForExistence = new boolean[vertices];
+        boolean result = hasPath(src, dst, graph, visitedForExistence);
+        print("Path from " + src + " to " + dst + ": " + (result ? "EXISTS" : "DOES NOT EXIST"));
+
+        printAllPaths(src, dst, graph, new boolean[vertices], String.valueOf(src));
+
+        ArrayList<ArrayList<Integer>> paths = new ArrayList<>();
+        ArrayList<Integer> pathWeights = new ArrayList<>();
+        ArrayList<Integer> psf = new ArrayList<>();
+        psf.add(src);
+        getAllPaths(src, dst, graph, new boolean[vertices], psf, 0, paths, pathWeights);
+        print(paths);
+        if (paths.isEmpty()) {
+            print("No paths between " + src + " and " + dst);
+        } else {
+            int minWIdx = 0;
+            int maxWIdx = 0;
+            for (int i = 1; i < pathWeights.size(); i++) {
+                if (pathWeights.get(i) < pathWeights.get(minWIdx)) {
+                    minWIdx = i;
+                }
+                if (pathWeights.get(i) > pathWeights.get(maxWIdx)) {
+                    maxWIdx = i;
+                }
+            }
+            ArrayList<Integer> pathSmallestWeight = new ArrayList<>(paths.get(minWIdx));
+            ArrayList<Integer> pathLargestWeight = new ArrayList<>(paths.get(maxWIdx));
+            int minWeight = pathWeights.get(minWIdx);
+            int maxWeight = pathWeights.get(maxWIdx);
+
+            paths.sort(Comparator.comparing((ArrayList<Integer> path) -> path.size()));
+            print(paths);
+            print("Smallest path by no of edges");
+            print(paths.get(0));
+            print("Largest path by no of edges");
+            print(paths.get(paths.size() - 1));
+            print("K(3)th Largest path (by edge count)");
+            int k = 3;
+            if (paths.size() >= k) {
+                print(paths.get(paths.size() - k));
+            } else {
+                print("(fewer than " + k + " paths)");
+            }
+            print("Smallest in terms of weight (total " + minWeight + ")");
+            print(pathSmallestWeight);
+            print("Largest in terms of weight (total " + maxWeight + ")");
+            print(pathLargestWeight);
+        }
+
+        print("Connected components:");
+        boolean[] visitedForConnectedComponents = new boolean[vertices];
+        for (int i = 0; i < vertices; i++) {
+            if (visitedForConnectedComponents[i]) {
+                continue;
+            }
+            StringBuilder line = new StringBuilder();
+            appendComponentVertices(i, graph, visitedForConnectedComponents, line);
+            print(line.toString());
+        }
+
+        print("Is graph Connected");
+        boolean[] visitedForIsGraphConnected = new boolean[vertices];
+        dfs(0, graph, visitedForIsGraphConnected);
+        boolean isConnected = true;
+        for (int i = 0; i < visitedForIsGraphConnected.length; i++) {
+            if (!visitedForIsGraphConnected[i]) {
+                isConnected = false;
+                break;
+            }
+        }
+        print("is Graph Connected: " + isConnected);
     }
 
     private static void printAllPaths(int node, int dst, ArrayList<Edge>[] graph, boolean[] visited, String path)
             throws IOException {
         if (node == dst) {
             print(path);
+            return;
         }
         visited[node] = true;
         for (Edge e : graph[node]) {
@@ -59,6 +143,25 @@ public class HasPath {
                 continue;
             printAllPaths(e.nbr, dst, graph, visited, path + "-" + e.nbr);
         }
+        visited[node] = false;
+    }
+
+    private static void getAllPaths(int node, int dst, ArrayList<Edge>[] graph, boolean[] visited,
+            ArrayList<Integer> psf, int wsf, ArrayList<ArrayList<Integer>> paths, ArrayList<Integer> pathWeights) {
+        if (node == dst) {
+            paths.add(new ArrayList<>(psf));
+            pathWeights.add(wsf);
+            return;
+        }
+        visited[node] = true;
+        for (Edge e : graph[node]) {
+            if (visited[e.nbr])
+                continue;
+            psf.add(e.nbr);
+            getAllPaths(e.nbr, dst, graph, visited, psf, wsf + e.weight, paths, pathWeights);
+            psf.remove(psf.size() - 1);
+        }
+        visited[node] = false;
     }
 
     private static boolean hasPath(int node, int dst, ArrayList<Edge>[] graph, boolean[] visited) {
@@ -72,6 +175,29 @@ public class HasPath {
             }
         }
         return false;
+    }
+
+    /** DFS one undirected component; appends vertex ids separated by spaces (mark before recurse). */
+    private static void appendComponentVertices(int node, ArrayList<Edge>[] graph, boolean[] visited, StringBuilder out) {
+        visited[node] = true;
+        if (out.length() > 0) {
+            out.append(' ');
+        }
+        out.append(node);
+        for (Edge edge : graph[node]) {
+            if (!visited[edge.nbr]) {
+                appendComponentVertices(edge.nbr, graph, visited, out);
+            }
+        }
+    }
+
+    private static void dfs(int node, ArrayList<Edge>[] graph, boolean[] visited) {
+        visited[node] = true;
+        for (Edge edge : graph[node]) {
+            if (!visited[edge.nbr]) {
+                dfs(edge.nbr, graph, visited);
+            }
+        }
     }
 
     static int MOD = 1_000_000_007;
