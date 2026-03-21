@@ -37,7 +37,9 @@ public class HasPath {
                 { 1, 2, 10 },
                 { 0, 3, 1 },
                 { 3, 2, 1 },
+                { 3, 4, 3 },
                 { 4, 5, 3 },
+                { 5, 0, 4 }
         };
         // int src = scanInt();
         // int dst = scanInt();
@@ -129,6 +131,38 @@ public class HasPath {
             }
         }
         print("is Graph Connected: " + isConnected);
+
+        print("perfect friends");
+        int n = 7;
+        int k = 5;
+        int[][] connections = {
+                { 0, 1 },
+                { 2, 3 },
+                { 4, 5 },
+                { 5, 6 },
+                { 4, 6 },
+        };
+
+        perfectFriends(n, k, connections);
+
+        print("Hamiltonian paths and cycle");
+        boolean[] visitedForHamiltonian = new boolean[vertices];
+        ArrayList<ArrayList<Integer>> hamiltonianPaths = new ArrayList<>();
+        ArrayList<Integer> hpsf = new ArrayList<>();
+        hpsf.add(0);
+        hamiltonianPaths(0, graph, visitedForHamiltonian, hpsf, hamiltonianPaths);
+        print(hamiltonianPaths);
+        for (ArrayList<Integer> hamiltonianPath : hamiltonianPaths) {
+            int start = hamiltonianPath.getFirst();
+            int destination = hamiltonianPath.getLast();
+            ArrayList<Edge> nbrs = graph[start];
+            for (Edge edge : nbrs) {
+                if (edge.nbr == destination) {
+                    print("hamiltonian cycle" + hamiltonianPath);
+                    break;
+                }
+            }
+        }
     }
 
     private static void printAllPaths(int node, int dst, ArrayList<Edge>[] graph, boolean[] visited, String path)
@@ -198,6 +232,64 @@ public class HasPath {
                 dfs(edge.nbr, graph, visited);
             }
         }
+    }
+
+    private static void perfectFriends(int n, int k, int[][] connections) throws IOException {
+        ArrayList<Edge>[] graph = new ArrayList[n];
+        for (int i = 0; i < graph.length; i++) {
+            graph[i] = new ArrayList<Edge>();
+        }
+
+        for (int[] edge : connections) {
+            graph[edge[0]].add(new Edge(edge[0], edge[1], 0));
+            graph[edge[1]].add(new Edge(edge[1], edge[0], 0));
+        }
+
+        boolean[] visited = new boolean[n];
+        compute_fact();
+        long ans = nCr(n, 2);
+        for (int i = 0; i < n; i++) {
+            if (visited[i]) {
+                continue;
+            }
+            ArrayList<Integer> component = new ArrayList<>();
+            getConnectedComponent(i, graph, visited, component);
+            ans = ans - (nCr(component.size(), 2));
+        }
+        print("perfect friends: " + ans);
+    }
+
+    private static void getConnectedComponent(int node, ArrayList<Edge>[] graph, boolean[] visited,
+            ArrayList<Integer> nodes) {
+        nodes.add(node);
+        visited[node] = true;
+
+        for (Edge edge : graph[node]) {
+            if (!visited[edge.nbr]) {
+                getConnectedComponent(edge.nbr, graph, visited, nodes);
+            }
+        }
+    }
+
+    private static void hamiltonianPaths(int node, ArrayList<Edge>[] graph, boolean[] visited, ArrayList<Integer> psf,
+            ArrayList<ArrayList<Integer>> paths) {
+        System.out.println(node + "-" + psf);
+        if (psf.size() == graph.length) {
+
+            paths.add(new ArrayList<>(psf));
+            return;
+        }
+
+        visited[node] = true;
+
+        for (Edge edge : graph[node]) {
+            if (!visited[edge.nbr]) {
+                psf.add(edge.nbr);
+                hamiltonianPaths(edge.nbr, graph, visited, psf, paths);
+                psf.remove(psf.size() - 1);
+            }
+        }
+        visited[node] = false;
     }
 
     static int MOD = 1_000_000_007;
